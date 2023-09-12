@@ -26,32 +26,18 @@ services:
       INFLUXDB_USER_PASSWORD: nimda321
 
   grafana:
-      image: grafana/grafana:latest
-      container_name: grafana
-      ports:
-        - "3001:3000"
-      networks:
-        - public
-        - private
-      volumes:
-        - grafana_lib:/var/lib/grafana
-#        - ${PWD}/grafana/privkey1.pem:/privkey1.pem:ro
-#        - ${PWD}/grafana/fullchain1.pem:/fullchain1.pem:ro
-        - ${PWD}/grafana/:/var/lib/grafana/ds/
-      environment:
-        GF_AUTH_ANONYMOUS_ENABLED: "false"
-        GF_SECURITY_ADMIN_PASSWORD: "nimda321"
-        GF_SECURITY_ADMIN_USER: "admin"
-        GF_SERVER_PROTOCOL: "http"
-        GF_SERVER_DOMAIN: "sebson.ddns.net"
-#        GF_SERVER_CERT_FILE: "/fullchain1.pem"
-#        GF_SERVER_CERT_KEY: "/privkey1.pem"
-        GF_SERVER_METRICS_ENABLED: "true"
-        GF_SERVER_METRICS_INTERVAL_SECONDS: "10"
-        INFLUXDB_URI: "http://influxdb:8086"
-        INFLUXDB_DB: telegraf
-        INFLUXDB_USER: telegraf
-        INFLUXDB_USER_PASSWORD: nimda321
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+volumes:
+  prom_data:
         
   telegraf:
     image: telegraf:latest
@@ -64,17 +50,16 @@ services:
       INFLUXDB_URI: "http://localhost:8086"
 
   prometheus:
-    image: quay.io/prometheus/prometheus:latest
+    image: prom/prometheus
     container_name: prometheus
-    volumes:
-     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-     - private
-    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
-     - 9091:9090
-    depends_on:
-     - node_exporter
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
 
   node_exporter:
     image: prom/node-exporter:latest
