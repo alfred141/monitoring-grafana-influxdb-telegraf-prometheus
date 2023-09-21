@@ -10,7 +10,7 @@ volumes:
 
 services:
   influxdb:
-    image: influxdb:alpine
+    image: influxdb:1.8.10
     container_name: influxdb
     ports:
       - "8086:8086"
